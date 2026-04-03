@@ -1,0 +1,80 @@
+import json
+import csv
+import os
+from kafka import KafkaConsumer
+
+consumer = KafkaConsumer (
+    'weather_updates',
+    bootstrap_servers=['127.0.0.1:9092'],
+    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+    auto_offset_reset='earliest',
+    api_version=(3, 5, 0),
+    group_id='weather-app-v1' # This keeps your place in the data stream
+)
+
+print("Alert app connected. waiting for weather data..")
+
+try:
+    for message in consumer:
+        report = message.value
+        temp = report['temp']
+        
+        if temp > 30:
+            print(f"🔥 ALERT! High temperature in {report['city']}: {temp}°C")
+        else:
+            print(f"Normal: {report['city']} is {temp}°C")
+except KeyboardInterrupt:
+    print("🔔 Alert app stopped.")
+finally:
+    consumer.close()
+
+
+
+
+from kafka import KafkaProducer
+import json
+import time
+import requests
+
+# 1. configuration
+API_KEY = "8ac01219aa0b30a52043257975ca8e46"  # API key
+CITIES = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Miami"]
+producer = KafkaProducer(
+    bootstrap_servers=['127.0.0.1:9092'],
+    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+    api_version=(3, 5, 0)
+)
+
+def get_live_weather(city):
+    """Fetches real data from the OpenWeather API"""
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return {
+            "city": data["name"],
+            "temp": data["main"]["temp"],
+            "humidity": data["main"]["humidity"],
+            "description": data["weather"][0]["description"],
+            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    else:
+        print(f"Error fetching {city}: {response.status_code}")
+        return None
+
+print("🚀 Real-Time Weather Producer Started...")
+
+try:
+    while True:
+        for city in CITIES:
+            weather_report = get_live_weather(city)
+            if weather_report:
+                producer.send('weather_updates', value=weather_report)
+                print(f"Sent: {weather_report['city']} | {weather_report['temp']}°C")
+        
+        # Free accounts have a limit, so we'll fetch every 5 minutes
+        print("Waiting 5 minutes for next update...")
+        time.sleep(300) 
+
+except KeyboardInterrupt:
+    print("Producer stopped.")
