@@ -45,11 +45,3 @@ Fault Tolerance: Schema-safe CSV writing using DictWriter with extra-action hand
 
 
 ---
-
-### 📤 How to Push the README
-Once you've saved the file, go to your second terminal and run:
-
-```bash
-git add README.md
-git commit -m "Docs: Added professional README with architecture overview"
-git push origin main
