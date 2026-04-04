@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+import time
 from kafka import KafkaConsumer
 
 # File setup
@@ -13,13 +14,23 @@ if not os.path.exists(csv_file):
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
-consumer = KafkaConsumer (
-    'weather_updates',
-    bootstrap_servers=['127.0.0.1:9092'],
-    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-    auto_offset_reset='latest',
-    api_version=(3, 5, 0)
-)
+# Get the host dynamically
+kafka_host = os.getenv('KAFKA_SERVER', '127.0.0.1:9092')
+
+consumer = None
+print(f"🔗 Attempting to connect to Kafka at {kafka_host}...")
+while consumer is None:
+    try:
+        consumer = KafkaConsumer (
+            'weather_updates',
+            bootstrap_servers=[kafka_host],
+            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+            auto_offset_reset='latest',
+            api_version=(3, 5, 0)
+        )
+    except Exception as e:
+        print(f"❌ Could not connect to Kafka at {kafka_host}: {e}. Retrying in 5 seconds...")
+        time.sleep(5)
 
 print("📊 Data Warehouse Consumer Connected. Saving live feeds to CSV...")
 
@@ -33,7 +44,7 @@ try:
 
         # --- Persistence Step (Data Engineering Skill) --
         with open(csv_file, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
             writer.writerow(data)
 
         # Output to terminal

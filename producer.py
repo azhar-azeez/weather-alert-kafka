@@ -2,8 +2,10 @@ import requests
 import json
 import time
 import sys
+import os
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
+from kafka.errors import NoBrokersAvailable
 
 # 1. configuration
 API_KEY = "8ac01219aa0b30a52043257975ca8e46"  # API key
@@ -11,16 +13,24 @@ CITIES = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Miami"]
 TOPIC = 'weather_updates'
 
 # --- 2. Initialize Producer with Retry Logic ---
-try:
-    producer = KafkaProducer(
-    bootstrap_servers=['127.0.0.1:9092'],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-    api_version=(3, 5, 0),
-    retries=5  
-)
-except Exception as e:
-    print(f"❌ Could not connect to Kafka: {e}")
-    sys.exit(1)
+kafka_host = os.getenv('KAFKA_SERVER', '127.0.0.1:9092')
+
+producer = None
+print(f"🔗 Attempting to connect to Kafka at {kafka_host}...")
+while producer is None:
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=[kafka_host],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            api_version=(3, 5, 0),
+            retries=5  
+        )
+        print("✅ Producer Connected to Kafka!")
+    except Exception as e:
+        print(f"❌ Kafka not ready at. Retrying in 5 seconds...")
+        time.sleep(5)
+
+
 
 def get_live_weather(city):
     """Fetches real data with error handling."""

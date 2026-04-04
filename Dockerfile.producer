@@ -3,5 +3,5 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY producer.py .
+# The -u flag ensures Python logs are sent to the terminal immediately
 CMD ["python", "-u", "producer.py"]
-
