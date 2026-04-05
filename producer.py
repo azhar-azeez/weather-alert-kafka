@@ -9,7 +9,17 @@ from kafka.errors import NoBrokersAvailable
 
 # 1. configuration
 API_KEY = "8ac01219aa0b30a52043257975ca8e46"  # API key
-CITIES = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Miami"]
+CITIES = [
+    "Colombo",      # Western
+    "Kandy",        # Central
+    "Galle",        # Southern
+    "Jaffna",       # Northern
+    "Trincomalee",  # Eastern
+    "Kurunegala",   # North Western
+    "Anuradhapura", # North Central
+    "Badulla",      # Uva
+    "Ratnapura"     # Sabaragamuwa
+]
 TOPIC = 'weather_updates'
 
 # --- 2. Initialize Producer with Retry Logic ---

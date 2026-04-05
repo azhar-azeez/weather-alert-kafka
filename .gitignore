@@ -7,6 +7,9 @@ venv/
 
 # Project Specific
 weather_history.csv
+US_weather_average_analytics_BL.png
+US_weather_average_analytics.png
+Weather_Realtime_Monitor.pbix
 *.log
 
 # Docker
